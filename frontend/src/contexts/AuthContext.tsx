@@ -20,7 +20,7 @@ interface AuthContextType {
   user: any;
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string) => Promise<void>;
+  register: (email: string, password: string, name?: string) => Promise<void>;
   logout: () => void;
 }
 
@@ -56,16 +56,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = async (email: string, password: string) => {
     // sign in with firebase and exchange token
+    console.log(auth, email, password);
     const cred = await signInWithEmailAndPassword(auth, email, password);
     const idToken = await cred.user.getIdToken();
     await exchangeIdToken(idToken);
   };
 
-  const register = async (email: string, password: string) => {
-    // create user in firebase then exchange token
+  const register = async (email: string, password: string, name?: string) => {
+    // create user in firebase then exchange token and send name to backend
     const cred = await createUserWithEmailAndPassword(auth, email, password);
-    // optionally update profile with name
-    await exchangeIdToken(await cred.user.getIdToken());
+    const idToken = await cred.user.getIdToken();
+    // call backend register endpoint which will persist the profile with name
+    await axios.post('/api/auth/register', { idToken, name });
+    // after backend sets cookie and returns, fetch profile
+    const me = await axios.get('/api/auth/me');
+    setUser(me.data.user);
+    setIsAuthenticated(true);
   };
 
   const logout = async () => {

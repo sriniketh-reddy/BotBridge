@@ -94,6 +94,16 @@ By leveraging MCP and composable AI tools, it transforms everyday prompts into *
 
 Set `BASE_URL` in `backend/.env` (see `.env.example`) to control where the server binds and the allowed CORS origin. Set `VITE_API_BASE_URL` in the frontend environment (see `frontend/.env.example`) so the frontend points to the correct backend when deployed.
 
+### CORS and credentials (important)
+
+If your frontend sends requests with credentials (cookies) — which this app does to persist the backend session cookie — the backend must return Access-Control-Allow-Origin set to the exact origin of the frontend (not "*") and include Access-Control-Allow-Credentials: true. To make this easy in development, set `FRONTEND_ORIGIN` in `backend/.env` to match your Vite dev URL (for example `http://localhost:5173`).
+
+Example:
+
+- `FRONTEND_ORIGIN=http://localhost:5173`
+
+If you change the Vite dev server port (Vite may choose a different port when the default is occupied), update `FRONTEND_ORIGIN` accordingly.
+
 ### Firebase setup (frontend)
 
 Create a Firebase project and enable Email/Password sign-in. Add the web app configuration values into `frontend/.env` (see `frontend/.env.example`). The frontend uses the Firebase client SDK to sign in users and exchanges the ID token with the backend `/api/auth/verify-token` endpoint to obtain a backend JWT.

@@ -5,14 +5,19 @@ const mcpCollection = firestore.collection('mcp_servers');
 const chatsCollection = firestore.collection('chats');
 
 export const getUser = async (uid: string) => {
+  console.debug('[firestore] getUser', uid);
   const doc = await usersCollection.doc(uid).get();
-  return doc.exists ? { id: doc.id, ...doc.data() } : null;
+  const result = doc.exists ? { id: doc.id, ...doc.data() } : null;
+  console.debug('[firestore] getUser result', !!result);
+  return result;
 };
 
 export const createUser = async (uid: string, payload: any) => {
   const now = new Date().toISOString();
   const data = { ...payload, created_at: now, updated_at: now };
+  console.debug('[firestore] createUser', uid, payload);
   await usersCollection.doc(uid).set(data, { merge: true });
+  console.debug('[firestore] createUser done', uid);
   return { id: uid, ...data };
 };
 
@@ -22,17 +27,23 @@ export const addUserMcpServer = async (uid: string, mcpServerId: string) => {
 };
 
 export const getUserMcpServers = async (uid: string) => {
+  console.debug('[firestore] getUserMcpServers', uid);
   const sub = await usersCollection.doc(uid).collection('user_mcp_servers').get();
-  return sub.docs.map((d: FirebaseFirestore.QueryDocumentSnapshot) => ({ id: d.id, ...d.data() }));
+  const res = sub.docs.map((d: FirebaseFirestore.QueryDocumentSnapshot) => ({ id: d.id, ...d.data() }));
+  console.debug('[firestore] getUserMcpServers count', res.length);
+  return res;
 };
 
 export const createMcpServer = async (url: string) => {
+  console.debug('[firestore] createMcpServer', url);
   const ref = mcpCollection.doc();
   await ref.set({ url, created_at: new Date().toISOString() });
+  console.debug('[firestore] createMcpServer done', ref.id);
   return { id: ref.id, url };
 };
 
 export const deleteMcpServer = async (mcpServerId: string) => {
+  console.debug('[firestore] deleteMcpServer', mcpServerId);
   // delete the mcp server doc
   await mcpCollection.doc(mcpServerId).delete();
   // remove references from all users' subcollections
@@ -43,11 +54,14 @@ export const deleteMcpServer = async (mcpServerId: string) => {
     batch.delete(ref);
   });
   await batch.commit();
+  console.debug('[firestore] deleteMcpServer done', mcpServerId);
 };
 
 export const unlinkUserMcpServer = async (uid: string, mcpServerId: string) => {
+  console.debug('[firestore] unlinkUserMcpServer', uid, mcpServerId);
   const ref = usersCollection.doc(uid).collection('user_mcp_servers').doc(mcpServerId);
   await ref.delete();
+  console.debug('[firestore] unlinkUserMcpServer done', uid, mcpServerId);
 };
 
 export const createChat = async (userId: string) => {
