@@ -4,7 +4,7 @@ import axios from "axios";
 import { auth } from "../firebase/client";
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000';
 axios.defaults.baseURL = API_BASE;
 
 axios.defaults.withCredentials = true;

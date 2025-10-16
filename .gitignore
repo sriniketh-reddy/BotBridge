@@ -38,6 +38,7 @@ coverage/
 # Others
 frontend/node_modules/
 backend/node_modules/
+backend/config/firebase-service-account.json
 
 # Local dev files
 .vscode/
