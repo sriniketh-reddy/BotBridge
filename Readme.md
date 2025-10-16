@@ -98,3 +98,107 @@ Set `BASE_URL` in `backend/.env` (see `.env.example`) to control where the serve
 
 Create a Firebase project and enable Email/Password sign-in. Add the web app configuration values into `frontend/.env` (see `frontend/.env.example`). The frontend uses the Firebase client SDK to sign in users and exchanges the ID token with the backend `/api/auth/verify-token` endpoint to obtain a backend JWT.
 
+---
+
+## 🛠️ Install & Run (Local Development)
+
+Follow these steps to run the frontend and backend locally. Both services are independent; you can run them in separate terminals.
+
+### Backend (Express + Firebase Admin)
+
+1. Open a terminal and change to the backend folder:
+
+```powershell
+cd backend
+```
+
+2. Install dependencies:
+
+```powershell
+npm install
+```
+
+3. Create a `.env` file in the `backend/` folder (see `.env.example`) and set the required variables (service account or JSON string, JWT secret, port):
+
+Required `.env` variables:
+
+- `PORT` — port the server listens on (default: 4000)
+- `BASE_URL` — full base URL for CORS (e.g. `http://localhost:4000`)
+- `FIREBASE_SERVICE_ACCOUNT_PATH` — local path to your Firebase service account JSON (or set `FIREBASE_SERVICE_ACCOUNT_JSON` with the JSON contents)
+- `JWT_SECRET` — a random secret for signing backend JWTs
+
+4. Start the backend in development mode:
+
+```powershell
+npm run dev
+```
+
+The backend will listen on `http://localhost:4000` (or the PORT you set).
+
+### Frontend (Vite + React + Tailwind)
+
+1. Open a new terminal and change to the frontend folder:
+
+```powershell
+cd frontend
+```
+
+2. Install dependencies:
+
+```powershell
+npm install
+```
+
+3. Create a `.env` file in the `frontend/` folder (you can copy `frontend/.env.example`) and set the Firebase variables and `VITE_API_BASE_URL`:
+
+Required `frontend/.env` variables:
+
+- `VITE_API_BASE_URL` — backend API base URL (e.g. `http://localhost:4000`)
+- `VITE_FIREBASE_API_KEY` — Firebase web apiKey
+- `VITE_FIREBASE_AUTH_DOMAIN`
+- `VITE_FIREBASE_PROJECT_ID`
+- `VITE_FIREBASE_STORAGE_BUCKET`
+- `VITE_FIREBASE_MESSAGING_SENDER_ID`
+- `VITE_FIREBASE_APP_ID`
+
+4. Start the frontend dev server:
+
+```powershell
+npm run dev
+```
+
+Open the browser at the local Vite URL (usually `http://localhost:5173`) and the frontend will call the backend at `VITE_API_BASE_URL`.
+
+---
+
+## ⚙️ Environment Variables Summary
+
+Backend (`backend/.env`)
+
+```text
+PORT=4000
+BASE_URL=http://localhost:4000
+# Either a path to the service account JSON file or the JSON itself
+FIREBASE_SERVICE_ACCOUNT_PATH=./serviceAccountKey.json
+# or
+FIREBASE_SERVICE_ACCOUNT_JSON={...}
+JWT_SECRET=your_jwt_secret_here
+```
+
+Frontend (`frontend/.env`)
+
+```text
+VITE_API_BASE_URL=http://localhost:4000
+VITE_FIREBASE_API_KEY=...
+VITE_FIREBASE_AUTH_DOMAIN=...
+VITE_FIREBASE_PROJECT_ID=...
+VITE_FIREBASE_STORAGE_BUCKET=...
+VITE_FIREBASE_MESSAGING_SENDER_ID=...
+VITE_FIREBASE_APP_ID=...
+```
+
+Notes:
+- Keep your Firebase service account JSON file out of source control. Add it to `.gitignore` (already included).
+- For production, use secure secret management (e.g., environment variables in your hosting platform, secret manager, or CI/CD secrets).
+
+
