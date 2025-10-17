@@ -7,6 +7,7 @@ import { Link } from "react-router-dom";
 const RegistrationPage: React.FC = () => {
   const { register } = useAuth();
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   const [form, setForm] = useState({ name: "", email: "", password: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -24,6 +25,10 @@ const RegistrationPage: React.FC = () => {
       setLoading(false);
     }
   };
+
+  React.useEffect(() => {
+    if (isAuthenticated) navigate('/chat');
+  }, [isAuthenticated, navigate]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">

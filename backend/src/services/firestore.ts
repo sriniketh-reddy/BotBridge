@@ -72,6 +72,14 @@ export const createChat = async (userId: string) => {
   return { id: chatRef.id };
 };
 
+export const getUserChats = async (userId: string) => {
+  console.debug('[firestore] getUserChats', userId);
+  const sub = await usersCollection.doc(userId).collection('user_chats').orderBy('created_at', 'desc').get();
+  const res = sub.docs.map((d: FirebaseFirestore.QueryDocumentSnapshot) => ({ id: d.id, ...d.data() }));
+  console.debug('[firestore] getUserChats count', res.length);
+  return res;
+};
+
 export const addMessage = async (chatId: string, sender: string, text: string) => {
   const messages = chatsCollection.doc(chatId).collection('messages');
   const msgRef = messages.doc();
@@ -86,12 +94,48 @@ export const getChatMessages = async (chatId: string) => {
   return snapshot.docs.map((d: FirebaseFirestore.QueryDocumentSnapshot) => ({ id: d.id, ...d.data() }));
 };
 
+export const deleteChat = async (chatId: string) => {
+  console.debug('[firestore] deleteChat', chatId);
+  // delete messages subcollection documents
+  const messagesRef = chatsCollection.doc(chatId).collection('messages');
+  const msgsSnapshot = await messagesRef.get();
+  const batch = firestore.batch();
+  msgsSnapshot.docs.forEach((m: FirebaseFirestore.QueryDocumentSnapshot) => batch.delete(m.ref));
+  // delete the chat doc itself
+  batch.delete(chatsCollection.doc(chatId));
+  await batch.commit();
+  console.debug('[firestore] deleteChat done', chatId);
+};
+
+// remove the user->chat link and delete the chat doc if requested; then ensure user has at least one chat
+export const unlinkUserChatAndEnsure = async (userId: string, chatId: string) => {
+  console.debug('[firestore] unlinkUserChatAndEnsure', userId, chatId);
+  // delete the user_chats link
+  await usersCollection.doc(userId).collection('user_chats').doc(chatId).delete();
+  // attempt to delete the chat doc and its messages
+  try {
+    await deleteChat(chatId);
+  } catch (err) {
+    console.debug('[firestore] deleteChat error (continuing)', err);
+  }
+
+  // check remaining chats for user
+  const remaining = await getUserChats(userId);
+  if (!remaining || remaining.length === 0) {
+    console.debug('[firestore] no remaining chats for user, creating new one', userId);
+    const newChat = await createChat(userId);
+    return { created: true, newChat };
+  }
+  return { created: false };
+};
+
 export default {
   getUser,
   createUser,
   addUserMcpServer,
   createMcpServer,
   createChat,
+  getUserChats,
   addMessage,
   getChatMessages,
 };

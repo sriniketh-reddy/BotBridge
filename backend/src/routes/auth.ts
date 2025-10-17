@@ -1,8 +1,10 @@
 import express from 'express';
+import dotenv from 'dotenv';
 import { auth } from '../config/firebase.js';
-import { createUser, getUser } from '../services/firestore.js';
+import { createUser, getUser, getUserChats, createChat } from '../services/firestore.js';
 import jwt from 'jsonwebtoken';
 
+dotenv.config();
 const router = express.Router();
 
 // Endpoint to validate ID token and return or create user profile
@@ -54,6 +56,19 @@ router.post('/register', async (req, res) => {
     // create or update name
     console.debug('[auth] creating/updating profile for uid', uid, profile);
     await createUser(uid, profile);
+    // ensure the user has at least one chat. If they have none, create one.
+    try {
+      const userChats = await getUserChats(uid);
+      if (!userChats || userChats.length === 0) {
+        console.debug('[auth] no chats found for new user, creating initial chat', uid);
+        await createChat(uid);
+      } else {
+        console.debug('[auth] user already has chats, skipping initial chat creation', uid, userChats.length);
+      }
+    } catch (chatErr) {
+      console.error('[auth] error ensuring initial chat for user', uid, chatErr);
+      // do not fail registration for chat creation issues; continue
+    }
     const user = await getUser(uid);
     const jwtSecret = process.env.JWT_SECRET || 'dev-secret';
     const token = jwt.sign({ uid }, jwtSecret, { expiresIn: '7d' });
@@ -75,9 +90,10 @@ router.post('/register', async (req, res) => {
 router.get('/me', async (req: any, res) => {
   // middleware-free: check cookie or Authorization header
   try {
-    const cookieToken = req.cookies?.botbridge_token;
-    const headerToken = req.headers.authorization && req.headers.authorization.split(' ')[1];
-    console.debug('[auth] /me cookie present', !!cookieToken, 'header present', !!headerToken);
+  const cookieToken = req?.cookies?.botbridge_token;
+  const headerAuth = (req.headers && (req.headers.authorization || req.headers['Authorization'])) as string | undefined;
+  const headerToken = headerAuth ? headerAuth.split(' ')[1] : undefined;
+  console.debug('[auth] /me cookie present', !!cookieToken, 'header present', !!headerToken, 'headerAuth', headerAuth ? '[REDACTED]' : 'none');
     const token = cookieToken || headerToken;
     if (!token) {
       console.debug('[auth] /me no token found');

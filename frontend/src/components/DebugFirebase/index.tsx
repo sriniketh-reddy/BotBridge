@@ -21,6 +21,9 @@ const DebugFirebase: React.FC = () => {
 
   const [testResult, setTestResult] = useState<any>(null);
   const [running, setRunning] = useState(false);
+  const [usersList, setUsersList] = useState<any>(null);
+  const [lookupUid, setLookupUid] = useState('');
+  const [lookupResult, setLookupResult] = useState<any>(null);
 
   const runAuthTest = async () => {
     if (!apiKey) {
@@ -45,6 +48,45 @@ const DebugFirebase: React.FC = () => {
     }
   };
 
+  const fetchUsers = async () => {
+    setUsersList(null);
+    try {
+      const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
+      const url = `${API_BASE.replace(/\/$/, '')}/api/debug/users`;
+      const res = await fetch(url, { credentials: 'include' });
+      let data: any;
+      try {
+        data = await res.json();
+      } catch (jsonErr) {
+        const text = await res.text();
+        setUsersList({ status: res.status, error: 'non-json response', body: text });
+        return;
+      }
+      setUsersList({ status: res.status, data });
+    } catch (err: any) {
+      setUsersList({ error: err.message || String(err) });
+    }
+  };
+
+  const lookupUser = async () => {
+    setLookupResult(null);
+    if (!lookupUid) return;
+    try {
+      const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
+      const url = `${API_BASE.replace(/\/$/, '')}/api/debug/user/${lookupUid}`;
+      const res = await fetch(url, { credentials: 'include' });
+      try {
+        const data = await res.json();
+        setLookupResult({ status: res.status, data });
+      } catch (jsonErr) {
+        const text = await res.text();
+        setLookupResult({ status: res.status, error: 'non-json response', body: text });
+      }
+    } catch (err: any) {
+      setLookupResult({ error: err.message || String(err) });
+    }
+  };
+
   return (
     <div className="p-6">
       <h2 className="text-xl font-semibold mb-3">Firebase Debug</h2>
@@ -61,6 +103,27 @@ const DebugFirebase: React.FC = () => {
       <div className="flex items-center gap-2">
         <button onClick={runAuthTest} disabled={running} className="px-3 py-2 bg-indigo-600 text-white rounded">{running ? 'Running...' : 'Run Auth Test'}</button>
         <div className="text-sm text-slate-500">This will attempt a safe auth request to the Identity Toolkit to show the returned error (no account will be created).</div>
+      </div>
+
+      <hr className="my-4" />
+
+      <div className="mb-3">
+        <h3 className="font-semibold mb-2">Firestore debug</h3>
+        <div className="flex gap-2 items-center mb-2">
+          <button onClick={fetchUsers} className="px-3 py-2 bg-green-600 text-white rounded">List users</button>
+          <div className="text-sm text-slate-500">Calls <code>/api/debug/users</code> and shows documents in the <code>users</code> collection.</div>
+        </div>
+        {usersList && (
+          <pre className="bg-slate-100 dark:bg-slate-800 p-3 rounded">{JSON.stringify(usersList, null, 2)}</pre>
+        )}
+
+        <div className="flex gap-2 items-center mt-3">
+          <input value={lookupUid} onChange={(e) => setLookupUid(e.target.value)} placeholder="uid to lookup" className="px-2 py-1 border rounded" />
+          <button onClick={lookupUser} className="px-3 py-2 bg-blue-600 text-white rounded">Lookup user</button>
+        </div>
+        {lookupResult && (
+          <pre className="bg-slate-100 dark:bg-slate-800 p-3 rounded mt-2">{JSON.stringify(lookupResult, null, 2)}</pre>
+        )}
       </div>
 
       {testResult && (

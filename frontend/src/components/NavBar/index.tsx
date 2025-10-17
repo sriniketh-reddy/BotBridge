@@ -22,9 +22,7 @@ const NavBar: React.FC = () => {
         <div className="flex items-center gap-3">
           <Link to="/chat" className="px-3 py-2 rounded text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-200">Chat</Link>
           <Link to="/servers" className="px-3 py-2 rounded text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-200">Servers</Link>
-          {import.meta.env.DEV && (
-            <Link to="/debug" className="px-3 py-2 rounded text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-200">Debug</Link>
-          )}
+          {/* debug link removed */}
           {user ? (
             <div className="flex items-center gap-2">
               <button onClick={() => setConfirmOpen(true)} className="inline-flex items-center px-3 py-1 text-sm font-medium bg-red-600 text-white rounded hover:bg-red-700">Logout</button>

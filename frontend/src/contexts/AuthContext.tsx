@@ -48,6 +48,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const exchangeIdToken = async (idToken: string) => {
     const res = await axios.post('/api/auth/verify-token', { idToken });
     const token = res.data.token;
+    console.log('exchanged idToken for backend token', token);
     const user = res.data.user;
     setBackendToken(token);
     setUser(user);
@@ -59,6 +60,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     console.log(auth, email, password);
     const cred = await signInWithEmailAndPassword(auth, email, password);
     const idToken = await cred.user.getIdToken();
+    console.log('got idToken', idToken);
     await exchangeIdToken(idToken);
   };
 

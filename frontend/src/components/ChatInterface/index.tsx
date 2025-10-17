@@ -14,7 +14,7 @@ const ChatInterface: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // create a chat for the user if none
+    // if no chat selected, create one on mount
     const init = async () => {
       setLoading(true);
       setError(null);
@@ -30,7 +30,22 @@ const ChatInterface: React.FC = () => {
       }
     };
     init();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // load messages whenever chatId changes
+  useEffect(() => {
+    const load = async () => {
+      if (!chatId) return;
+      try {
+        const msgs = await axios.get(`/api/chat/${chatId}/messages`);
+        setMessages(msgs.data.messages as any);
+      } catch (err: any) {
+        // ignore for now
+      }
+    };
+    load();
+  }, [chatId]);
 
   const handleSend = async () => {
     if (!input.trim() || !chatId) return;
@@ -53,7 +68,7 @@ const ChatInterface: React.FC = () => {
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
       <div className="app-container grid grid-cols-1 lg:grid-cols-4 gap-6 py-8">
         <aside className="lg:col-span-1">
-          <ChatHistoryList />
+          <ChatHistoryList selectedChatId={chatId || undefined} onSelect={(id) => setChatId(id)} />
         </aside>
 
         <main className="lg:col-span-3 flex flex-col bg-white dark:bg-slate-800 rounded-lg shadow overflow-hidden">

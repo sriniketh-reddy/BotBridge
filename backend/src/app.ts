@@ -4,7 +4,6 @@ import cookieParser from 'cookie-parser';
 import authRoutes from './routes/auth.js';
 import chatRoutes from './routes/chat.js';
 import mcpRoutes from './routes/mcp.js';
-import debugRoutes from './routes/debug.js';
 
 const app = express();
 
@@ -51,9 +50,6 @@ app.use(cookieParser());
 app.use('/api/auth', authRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/mcp', mcpRoutes);
-// mount debug routes in non-production for quick debugging
-if (process.env.NODE_ENV !== 'production') {
-	app.use('/api/debug', debugRoutes);
-}
+// debug routes removed for production readiness
 
 export default app;

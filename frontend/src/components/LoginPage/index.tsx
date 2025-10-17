@@ -6,6 +6,7 @@ import { useNavigate, Link } from "react-router-dom";
 const LoginPage: React.FC = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -24,6 +25,11 @@ const LoginPage: React.FC = () => {
       setLoading(false);
     }
   };
+
+  // redirect if already authenticated
+  React.useEffect(() => {
+    if (isAuthenticated) navigate('/chat');
+  }, [isAuthenticated, navigate]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
