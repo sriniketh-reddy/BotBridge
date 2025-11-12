@@ -9,7 +9,7 @@ import axios from 'axios';
 const PROJECT_ID = process.env.GCLOUD_PROJECT || process.env.GOOGLE_CLOUD_PROJECT;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY; // optional
 
-export const generateBotResponse = async (messages: Array<{ sender: string; text: string }>, userId?: string) => {
+export const generateBotResponse = async (messages: Array<{ id: string, created_at: string, sender: string, text: string }>, userId?: string) => {
   // Compose prompt/context from messages
   const prompt = messages.map(m => `${m.sender === 'user' ? 'User' : 'Bot'}: ${m.text}`).join('\n') + '\nBot:';
 
@@ -19,8 +19,7 @@ export const generateBotResponse = async (messages: Array<{ sender: string; text
     const url = `https://us-central1-aiplatform.googleapis.com/v1/projects/${PROJECT_ID}/locations/us-central1/publishers/google/models/text-bison:predict`;
     try {
       const resp = await axios.post(url, {
-        instances: [{ content: prompt }],
-        parameters: { maxOutputTokens: 512 }
+        instances: [{ content: prompt }]
       }, {
         headers: {
           'Authorization': `Bearer ${GEMINI_API_KEY}`,

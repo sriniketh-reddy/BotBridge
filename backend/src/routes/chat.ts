@@ -13,23 +13,27 @@ router.post('/', verifyFirebaseToken, async (req: any, res) => {
 router.get('/', verifyFirebaseToken, async (req: any, res) => {
   const uid = req.uid;
   const chats = await firestore.getUserChats(uid);
+  console.log(chats);
   res.json({ chats });
 });
 
 router.get('/:chatId/messages', verifyFirebaseToken, async (req: any, res) => {
+  const uid = req.uid;
   const { chatId } = req.params;
-  const msgs = await firestore.getChatMessages(chatId);
+  const msgs = await firestore.getChatMessages(uid, chatId);
   res.json({ messages: msgs });
 });
 
 router.post('/:chatId/messages', verifyFirebaseToken, async (req: any, res) => {
   const { chatId } = req.params;
   const { text } = req.body;
-  const added = await firestore.addMessage(chatId, 'user', text);
+  const { uid } = req;
+  const added = await firestore.addMessage(uid, chatId, 'user', text);
   // fetch recent messages to build context
-  const msgs = await firestore.getChatMessages(chatId);
+  const msgs = await firestore.getChatMessages(uid, chatId);
+  console.log(msgs);
   const botResp = await (await import('../services/llm.js')).generateBotResponse(msgs, req.uid);
-  const botAdded = await firestore.addMessage(chatId, 'bot', String(botResp));
+  const botAdded = await firestore.addMessage(uid, chatId, 'bot', String(botResp));
   res.json({ message: added, bot: botAdded });
 });
 
@@ -38,7 +42,7 @@ router.delete('/:chatId', verifyFirebaseToken, async (req: any, res) => {
   const { chatId } = req.params;
   const uid = req.uid;
   try {
-    const result = await (await import('../services/firestore.js')).unlinkUserChatAndEnsure(uid, chatId);
+    const result = await firestore.deleteChat(uid, chatId);
     return res.json({ success: true, ...result });
   } catch (err) {
     console.error('delete chat error', err);

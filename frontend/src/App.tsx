@@ -14,16 +14,18 @@ const App: React.FC = () => {
   return (
     <AuthProvider>
       <AppProvider>
-        <NavBar />
-        <Routes>
-          <Route path="/" element={<Navigate to="/login" replace />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegistrationPage />} />
-          <Route path="/chat" element={<ProtectedRoute><ChatInterface /></ProtectedRoute>} />
-          <Route path="/servers" element={<ProtectedRoute><ServerManagement /></ProtectedRoute>} />
-          {/* debug route removed */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <div style={{maxHeight: "100dvh"}}>
+          <NavBar />
+          <Routes>
+            <Route path="/" element={<Navigate to="/login" replace />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegistrationPage />} />
+            <Route path="/chat" element={<ProtectedRoute><ChatInterface /></ProtectedRoute>} />
+            <Route path="/servers" element={<ProtectedRoute><ServerManagement /></ProtectedRoute>} />
+            {/* debug route removed */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </div>
       </AppProvider>
     </AuthProvider>
   );

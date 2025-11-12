@@ -6,15 +6,18 @@ const AddServerForm: React.FC<{ onAdded?: () => void }> = ({ onAdded }) => {
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [name, setName] = useState("");
 
   const { push } = useToast();
 
   const handleAdd = async () => {
     if (!url) return setError('Please enter a URL');
+    if (!name) return setError('Please enter a name for the server');
+
     setLoading(true);
     setError(null);
     try {
-      await axios.post('/api/mcp', { url });
+      await axios.post('/api/mcp', { name, url });
       setUrl("");
       if (onAdded) onAdded();
       push({ message: 'Server added', type: 'success' });
@@ -28,6 +31,13 @@ const AddServerForm: React.FC<{ onAdded?: () => void }> = ({ onAdded }) => {
 
   return (
     <div className="flex gap-2">
+      <input 
+        type="text"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        placeholder="Server Name"
+        className="flex-2 rounded-md border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+      />
       <input
         type="text"
         value={url}

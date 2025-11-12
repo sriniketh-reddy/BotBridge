@@ -10,7 +10,7 @@ const ServerManagement: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<Record<string, boolean>>({});
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const [toDelete, setToDelete] = useState<string | null>(null);
+  const [toDelete, setToDelete] = useState<string>("");
   const { push } = useToast();
 
   const load = async () => {
@@ -18,6 +18,7 @@ const ServerManagement: React.FC = () => {
     setError(null);
     try {
       const res = await axios.get('/api/mcp');
+      console.log('Loaded MCP servers', res.data.servers);
       setServers(res.data.servers || []);
     } catch (err: any) {
       setError(err?.response?.data?.error || err.message || 'Failed to load');
@@ -34,7 +35,7 @@ const ServerManagement: React.FC = () => {
     setError(null);
     try {
       await axios.delete(`/api/mcp/${id}`);
-      setServers(prev => prev.filter(s => (s.id || s.mcp_server_id) !== id));
+      setServers(prev => prev.filter(s => (s.id) !== id));
       push({ message: 'Server deleted', type: 'success' });
     } catch (err: any) {
       setError(err?.response?.data?.error || err.message || 'Delete failed');
@@ -57,10 +58,10 @@ const ServerManagement: React.FC = () => {
 
           <div className="mt-4 space-y-2">
             {servers.map(s => {
-              const id = s.mcp_server_id || s.id;
+              const {id, url, name} = s;
               return (
                 <div key={id} className="p-3 bg-slate-50 dark:bg-slate-700 rounded flex items-center justify-between">
-                  <div className="truncate">{id} — {s.url}</div>
+                  <div className="truncate">{name} — {url}</div>
                   <div className="flex items-center gap-2">
                     <button disabled={!!deleting[id]} onClick={() => { setToDelete(id); setConfirmOpen(true); }} className="text-sm inline-flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-md">
                       {deleting[id] ? 'Deleting...' : 'Delete'}
@@ -74,11 +75,11 @@ const ServerManagement: React.FC = () => {
         </div>
       </div>
     </div>
-    <Modal open={confirmOpen} title="Confirm delete" onClose={() => setConfirmOpen(false)}>
+    <Modal open={confirmOpen} title="Confirm delete">
       <div>Are you sure you want to delete this MCP server?</div>
       <div className="mt-4 flex justify-end gap-2">
         <button onClick={() => setConfirmOpen(false)} className="px-3 py-1 rounded bg-slate-200 dark:bg-slate-700">Cancel</button>
-        <button onClick={() => toDelete && handleDelete(toDelete)} className="px-3 py-1 rounded bg-red-600 text-white">Delete</button>
+        <button onClick={() => handleDelete(toDelete)} className="px-3 py-1 rounded bg-red-600 text-white">Delete</button>
       </div>
     </Modal>
     </>
