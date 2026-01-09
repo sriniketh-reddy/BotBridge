@@ -9,4 +9,5 @@ const BASE_URL = process.env.BASE_URL || `http://localhost:${PORT}`;
 
 app.listen(PORT, () => {
   console.log(`Server listening on ${BASE_URL}`);
+  console.log('GEMINI_API_KEY present:', !!process.env.GEMINI_API_KEY);
 });

@@ -4,7 +4,7 @@ import ChatHistoryList from "../ChatHistoryList";
 import axios from 'axios';
 import { useAuth } from '../../contexts/AuthContext';
 
-type ChatItem = { id: string, chat_name?:string, updated_at?: string, created_at?: string };
+type ChatItem = { id: string, chat_name?: string, updated_at?: string, created_at?: string };
 
 const ChatInterface: React.FC = () => {
   const { user } = useAuth();
@@ -21,7 +21,7 @@ const ChatInterface: React.FC = () => {
     setError(null);
     try {
       const res = await axios.get('/api/chat');
-      if(setChats) setChats(res.data.chats || []);
+      if (setChats) setChats(res.data.chats || []);
     } catch (err: any) {
       setError(err?.response?.data?.error || err.message || 'Failed to load chats');
     } finally {
@@ -76,11 +76,10 @@ const ChatInterface: React.FC = () => {
     setSending(true);
     setError(null);
     try {
-      await axios.post(`/api/chat/${chatId}/messages`, { text: input });
-      // refresh messages
-      const msgs = await axios.get(`/api/chat/${chatId}/messages`);
-      setMessages(msgs.data.messages as any);
-      await fetchChats();
+      const res = await axios.post(`/api/chat/${chatId}/messages`, { text: input });
+      // append new messages to state directly to avoid race condition
+      setMessages(prev => [...prev, res.data.message, res.data.bot]);
+      await fetchChats(); // restore chat list update
       setInput("");
     } catch (err: any) {
       setError(err?.response?.data?.error || err.message || 'Failed to send');
@@ -89,20 +88,51 @@ const ChatInterface: React.FC = () => {
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
+
+  const messagesEndRef = React.useRef<HTMLDivElement>(null);
+  const chatContainerRef = React.useRef<HTMLDivElement>(null);
+  const [showScrollButton, setShowScrollButton] = useState(false);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  const handleScroll = () => {
+    if (chatContainerRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = chatContainerRef.current;
+      const isBottom = scrollHeight - scrollTop - clientHeight < 100;
+      setShowScrollButton(!isBottom);
+    }
+  };
+
   return (
-    <div style={{maxHeight: "87dvh", height: "87dvh"}} className="overflow-hidden bg-slate-50 dark:bg-slate-900">
-      <div style={{paddingLeft: "50px", paddingRight: "50px"}} className="app-container-fluid  grid grid-cols-1 lg:grid-cols-4 gap-6 py-8">
-        <aside style={{maxHeight: "80dvh", height: "80dvh"}} className="lg:col-span-1">
-          <ChatHistoryList selectedChatId={chatId || undefined} onSelect={(id) => setChatId(id)} chats={chats} setChats={setChats} setInput={setInput}/>
+    <div style={{ maxHeight: "87dvh", height: "87dvh" }} className="overflow-hidden bg-slate-50 dark:bg-slate-900">
+      <div style={{ paddingLeft: "50px", paddingRight: "50px" }} className="app-container-fluid  grid grid-cols-1 lg:grid-cols-4 gap-6 py-8">
+        <aside style={{ maxHeight: "80dvh", height: "80dvh" }} className="lg:col-span-1">
+          <ChatHistoryList selectedChatId={chatId || undefined} onSelect={(id) => setChatId(id)} chats={chats} setChats={setChats} setInput={setInput} />
         </aside>
 
-        <main style={{maxHeight: "80dvh", height: "80dvh", borderRadius: "30px"}} className="lg:col-span-3 flex flex-col bg-white dark:bg-slate-800 rounded-lg shadow">
+        <main style={{ maxHeight: "80dvh", height: "80dvh", borderRadius: "30px" }} className="lg:col-span-3 flex flex-col bg-white dark:bg-slate-800 rounded-lg shadow relative">
           <header className="px-6 py-4 border-b dark:border-slate-700 flex items-center justify-between">
             <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-100">Chat</h3>
             <div className="text-sm text-slate-500">{user?.name || user?.email || 'Connected'}</div>
           </header>
 
-          <div className="flex-1 p-6 overflow-y-auto space-y-3">
+          <div
+            ref={chatContainerRef}
+            onScroll={handleScroll}
+            className="flex-1 p-6 overflow-y-auto space-y-3 relative"
+          >
             {messages.length === 0 && (
               <div className="text-center text-slate-500">No messages yet — say hello 👋</div>
             )}
@@ -117,12 +147,27 @@ const ChatInterface: React.FC = () => {
                 </div>
               </div>
             ))}
+            <div ref={messagesEndRef} />
           </div>
 
-          <div style={{borderRadius: "30px"}} className="p-4 bg-slate-50 dark:bg-slate-700 border-t dark:border-slate-700 flex gap-3">
+          {/* Scroll Down Button - Positioned relative to main container */}
+          {showScrollButton && (
+            <button
+              onClick={scrollToBottom}
+              className="absolute bottom-24 right-8 p-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full shadow-lg transition-all duration-200 z-10 animate-bounce"
+              aria-label="Scroll to bottom"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+              </svg>
+            </button>
+          )}
+
+          <div style={{ borderRadius: "30px" }} className="p-4 bg-slate-50 dark:bg-slate-700 border-t dark:border-slate-700 flex gap-3">
             <input
               value={input}
               onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
               placeholder="Type your message..."
               className="flex-1 rounded-md border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />

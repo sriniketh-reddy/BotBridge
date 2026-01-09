@@ -21,65 +21,48 @@ export const createUser = async (uid: string, payload: any) => {
   return { id: uid, ...data };
 };
 
-// export const addUserMcpServer = async (uid: string, url: string) => {
-//   const ref = await usersCollection.doc(uid).collection('user_mcp_servers').doc();
-//   await ref.set({ url, created_at: new Date().toISOString() });
-// };
-
 export const getUserMcpServers = async (uid: string) => {
   console.debug('[firestore] getUserMcpServers', uid);
   const sub = await usersCollection.doc(uid).collection('user_mcp_servers').get();
-  const res = sub.docs.map((d: FirebaseFirestore.QueryDocumentSnapshot) => ({id:d.id, ...d.data()}));
+  const res = sub.docs.map((d: any) => ({ id: d.id, ...d.data() }));
   console.debug('[firestore] getUserMcpServers count', res.length);
   return res;
 };
 
-export const createMcpServer = async (userId: string, name: string, url: string) => {
+export const createMcpServer = async (userId: string, name: string, url: string, tools: any[] = []) => {
   console.debug('[firestore] createMcpServer', url);
   const ref = await usersCollection.doc(userId).collection('user_mcp_servers').doc();
-  await ref.set({ name, url, created_at: new Date().toISOString() });
+  await ref.set({ name, url, tools, created_at: new Date().toISOString() });
   console.debug('[firestore] createMcpServer done', ref.id);
-  return { id: ref.id, url };
+  return { id: ref.id, name, url, tools };
 };
 
 export const deleteMcpServer = async (userId: string, mcpServerId: string) => {
   console.debug('[firestore] deleteMcpServer', mcpServerId);
-  // delete the mcp server doc
   await usersCollection.doc(userId).collection('user_mcp_servers').doc(mcpServerId).delete();
-  // remove references from all users' subcollections
-  // const usersSnapshot = await usersCollection.get();
-  // const batch = firestore.batch();
-  // usersSnapshot.docs.forEach((u: FirebaseFirestore.QueryDocumentSnapshot) => {
-  //   const ref = usersCollection.doc(u.id).collection('user_mcp_servers').doc(mcpServerId);
-  //   batch.delete(ref);
-  // });
-  // await batch.commit();
   console.debug('[firestore] deleteMcpServer done', mcpServerId);
 };
 
-// export const unlinkUserMcpServer = async (uid: string, mcpServerId: string) => {
-//   console.debug('[firestore] unlinkUserMcpServer', uid, mcpServerId);
-//   const ref = usersCollection.doc(uid).collection('user_mcp_servers').doc(mcpServerId);
-//   await ref.delete();
-//   console.debug('[firestore] unlinkUserMcpServer done', uid, mcpServerId);
-// };
-
 export const createChat = async (userId: string) => {
-  const now  = new Date().toISOString();
+  const now = new Date().toISOString();
   const ref = await usersCollection.doc(userId).collection('user_chats').doc();
   await ref.set({ chat_name: "Chats", created_at: now, updated_at: now });
-  return {id: ref.id};
+  return { id: ref.id };
 };
 
 export const getUserChats = async (userId: string) => {
   console.debug('[firestore] getUserChats', userId);
   const sub = await usersCollection.doc(userId).collection('user_chats').orderBy('updated_at', 'desc').get();
-  const res = await sub.docs.map((d: FirebaseFirestore.QueryDocumentSnapshot) => ({id: d.id, ...d.data()}));
-  console.debug('[firestore] getUserChats count', res);
+  const res = sub.docs.map((d: any) => ({ id: d.id, ...d.data() }));
+  console.debug('[firestore] getUserChats count', res.length);
   return res;
 };
 
-export const renameChat = async (chatId: string) => {}
+export const renameChat = async (userId: string, chatId: string, newName: string) => {
+  console.debug('[firestore] renameChat', userId, chatId, newName);
+  await usersCollection.doc(userId).collection('user_chats').doc(chatId).update({ chat_name: newName, updated_at: new Date().toISOString() });
+  return { id: chatId, chat_name: newName };
+};
 
 export const addMessage = async (userId: string, chatId: string, sender: string, text: string) => {
   const messages = usersCollection.doc(userId).collection('user_chats').doc(chatId).collection('messages');
@@ -92,15 +75,12 @@ export const addMessage = async (userId: string, chatId: string, sender: string,
 
 export const getChatMessages = async (userId: string, chatId: string) => {
   const snapshot = await usersCollection.doc(userId).collection('user_chats').doc(chatId).collection('messages').orderBy('created_at', 'asc').get();
-  return snapshot.docs.map((d: FirebaseFirestore.QueryDocumentSnapshot) => ({ id: d.id, ...d.data() }));
+  return snapshot.docs.map((d: any) => ({ id: d.id, ...d.data() }));
 };
 
 export const deleteChat = async (userId: string, chatId: string) => {
   console.debug('[firestore] unlinkUserChatAndEnsure', userId, chatId);
-  // delete the user_chats link
   await usersCollection.doc(userId).collection('user_chats').doc(chatId).delete();
-  
-  // check remaining chats for user
   const remaining = await getUserChats(userId);
   if (!remaining || remaining.length === 0) {
     console.debug('[firestore] no remaining chats for user, creating new one', userId);
@@ -113,12 +93,13 @@ export const deleteChat = async (userId: string, chatId: string) => {
 export default {
   getUser,
   createUser,
+  getUserMcpServers,
   createMcpServer,
   deleteMcpServer,
-  getUserMcpServers,
   createChat,
   getUserChats,
+  renameChat,
   addMessage,
   getChatMessages,
-  deleteChat
+  deleteChat,
 };

@@ -1,6 +1,7 @@
 import express from 'express';
 import verifyFirebaseToken from '../middlewares/auth.js';
 import firestore from '../services/firestore.js';
+import mcpClient from '../services/mcp.js';
 
 const router = express.Router();
 
@@ -8,10 +9,14 @@ const router = express.Router();
 router.post('/', verifyFirebaseToken, async (req: any, res) => {
   const { url, name } = req.body;
   const { uid } = req;
+
   if (!url) return res.status(400).json({ error: 'url required' });
-  const mcp = await firestore.createMcpServer(uid, name, url);
-  // if (req.uid) await addUserMcpServer(req.uid, mcp.id);
-  res.json({ mcp });
+
+  const tools = await mcpClient.fecthTools(url);
+  console.log("Tools fetched:", tools.length);
+
+  const mcp = await firestore.createMcpServer(uid, name, url, tools);
+  res.json({ mcp: { ...mcp, tools } });
 });
 
 // List current user's MCP servers
@@ -24,9 +29,9 @@ router.get('/', verifyFirebaseToken, async (req: any, res) => {
 
 // Delete an MCP server (only allowed for authenticated users)
 router.delete('/:id', verifyFirebaseToken, async (req: any, res) => {
-  const {uid} = req;
+  const { uid } = req;
   if (!uid) return res.status(401).json({ error: 'Not authenticated' });
-  const {id} = req.params;
+  const { id } = req.params;
   if (!id) return res.status(400).json({ error: 'id required' });
 
   try {
@@ -41,5 +46,7 @@ router.delete('/:id', verifyFirebaseToken, async (req: any, res) => {
     res.status(500).json({ error: 'Failed to delete' });
   }
 });
+
+
 
 export default router;

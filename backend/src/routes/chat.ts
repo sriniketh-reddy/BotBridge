@@ -1,8 +1,10 @@
 import express from 'express';
 import verifyFirebaseToken from '../middlewares/auth.js';
 import firestore from '../services/firestore.js';
+import { generateBotResponse } from '../services/gemini.js';
 
 const router = express.Router();
+
 
 router.post('/', verifyFirebaseToken, async (req: any, res) => {
   const uid = req.uid;
@@ -25,14 +27,18 @@ router.get('/:chatId/messages', verifyFirebaseToken, async (req: any, res) => {
 });
 
 router.post('/:chatId/messages', verifyFirebaseToken, async (req: any, res) => {
+  console.log('[CHAT ROUTE] ===== ROUTE HIT =====');
   const { chatId } = req.params;
   const { text } = req.body;
   const { uid } = req;
+  console.log('[CHAT ROUTE] Received message:', text);
   const added = await firestore.addMessage(uid, chatId, 'user', text);
   // fetch recent messages to build context
   const msgs = await firestore.getChatMessages(uid, chatId);
-  console.log(msgs);
-  const botResp = await (await import('../services/llm.js')).generateBotResponse(msgs, req.uid);
+  console.log('[CHAT ROUTE] Fetched messages:', msgs.length);
+  console.log('[CHAT ROUTE] About to call generateBotResponse');
+  const botResp = await generateBotResponse(msgs, req.uid);
+  console.log('[CHAT ROUTE] Got bot response:', botResp?.substring(0, 50));
   const botAdded = await firestore.addMessage(uid, chatId, 'bot', String(botResp));
   res.json({ message: added, bot: botAdded });
 });
@@ -47,6 +53,20 @@ router.delete('/:chatId', verifyFirebaseToken, async (req: any, res) => {
   } catch (err) {
     console.error('delete chat error', err);
     return res.status(500).json({ error: 'Failed to delete chat', detail: String(err) });
+  }
+});
+
+// rename a chat
+router.put('/:chatId', verifyFirebaseToken, async (req: any, res) => {
+  const { chatId } = req.params;
+  const { name } = req.body;
+  const uid = req.uid;
+  try {
+    const result = await firestore.renameChat(uid, chatId, name);
+    return res.json({ success: true, chat: result });
+  } catch (err) {
+    console.error('rename chat error', err);
+    return res.status(500).json({ error: 'Failed to rename chat', detail: String(err) });
   }
 });
 
