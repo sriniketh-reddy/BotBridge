@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from 'axios';
+import Dropdown from "../common/Dropdown";
 
 type ChatItem = { id: string, chat_name?: string, updated_at?: string, created_at?: string };
 
@@ -10,7 +11,6 @@ const ChatHistoryList: React.FC<{ selectedChatId?: string, onSelect?: (id: strin
   // Rename states
   const [editingChatId, setEditingChatId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
-  const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
   const [hoveredChatId, setHoveredChatId] = useState<string | null>(null);
 
   const fetchChats = async () => {
@@ -18,9 +18,12 @@ const ChatHistoryList: React.FC<{ selectedChatId?: string, onSelect?: (id: strin
     setError(null);
     try {
       const res = await axios.get('/api/chat');
-      if (setChats) setChats(res.data.chats || []);
+      const list = res.data.chats || [];
+      if (setChats) setChats(list);
+      return list;
     } catch (err: any) {
       setError(err?.response?.data?.error || err.message || 'Failed to load chats');
+      return [];
     } finally {
       setLoading(false);
     }
@@ -51,28 +54,33 @@ const ChatHistoryList: React.FC<{ selectedChatId?: string, onSelect?: (id: strin
     }
   };
 
-  const [deletingId, setDeletingId] = useState<string | null>(null);
+  // const [deletingId, setDeletingId] = useState<string | null>(null); // REMOVED unused
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<string | null>(null);
 
   const confirmDelete = (id: string) => {
     setPendingDelete(id);
     setConfirmOpen(true);
-    setMenuOpenId(null);
     setHoveredChatId(null);
   };
 
   const doDelete = async () => {
     if (!pendingDelete) return;
+    const isDeletingSelected = pendingDelete === selectedChatId;
     setConfirmOpen(false);
-    setDeletingId(pendingDelete);
+    // setDeletingId(pendingDelete);
     try {
       await axios.delete(`/api/chat/${pendingDelete}`);
-      await fetchChats();
+      const updatedChats = await fetchChats();
+      if (updatedChats.length === 0) {
+        await handleNew();
+      } else if (isDeletingSelected) {
+        if (onSelect) onSelect(updatedChats[0].id);
+      }
     } catch (err: any) {
       setError(err?.response?.data?.error || err.message || 'Failed to delete chat');
     } finally {
-      setDeletingId(null);
+      // setDeletingId(null);
       setPendingDelete(null);
     }
   };
@@ -80,7 +88,7 @@ const ChatHistoryList: React.FC<{ selectedChatId?: string, onSelect?: (id: strin
   const startRename = (id: string, currentName: string) => {
     setEditingChatId(id);
     setEditName(currentName);
-    setMenuOpenId(null);
+    setEditName(currentName);
   };
 
   const saveRename = async () => {
@@ -159,42 +167,39 @@ const ChatHistoryList: React.FC<{ selectedChatId?: string, onSelect?: (id: strin
                   )}
                 </div>
 
-                {!isEditing && (hoveredChatId === id || menuOpenId === id) && (
+                {!isEditing && (hoveredChatId === id) && (
                   <div className="ml-2 relative">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setMenuOpenId(menuOpenId === id ? null : id);
-                      }}
-                      className={`p-1 rounded-full ${active ? 'hover:bg-indigo-500' : 'hover:bg-slate-200 dark:hover:bg-slate-500'}`}
+                    <Dropdown
+                      trigger={
+                        <button
+                          className={`p-1 rounded-full ${active ? 'hover:bg-indigo-500' : 'hover:bg-slate-200 dark:hover:bg-slate-500'}`}
+                        >
+                          {/* Chevron Down Icon */}
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </button>
+                      }
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                        <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
-                      </svg>
-                    </button>
-
-                    {menuOpenId === id && (
-                      <div className="absolute right-0 top-8 w-32 bg-white dark:bg-slate-800 rounded-md shadow-lg z-10 border dark:border-slate-700 py-1">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            startRename(id, chatName);
-                          }}
-                          className="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700"
-                        >
-                          Rename
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            confirmDelete(id);
-                          }}
-                          className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    )}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          startRename(id, chatName);
+                        }}
+                        className="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 block"
+                      >
+                        Rename
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          confirmDelete(id);
+                        }}
+                        className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 block"
+                      >
+                        Delete
+                      </button>
+                    </Dropdown>
                   </div>
                 )}
               </li>
@@ -210,7 +215,7 @@ const ChatHistoryList: React.FC<{ selectedChatId?: string, onSelect?: (id: strin
             <h4 className="font-semibold mb-2 text-slate-800 dark:text-slate-100">Delete chat?</h4>
             <p className="text-sm text-slate-600 dark:text-slate-300 mb-4">This will remove the chat and its messages for your account. This action cannot be undone.</p>
             <div className="flex justify-end gap-2">
-              <button onClick={() => { setConfirmOpen(false); setPendingDelete(null); setMenuOpenId(null); }} className="px-3 py-1 rounded bg-slate-100 dark:bg-slate-700">Cancel</button>
+              <button onClick={() => { setConfirmOpen(false); setPendingDelete(null); }} className="px-3 py-1 rounded bg-slate-100 dark:bg-slate-700">Cancel</button>
               <button onClick={doDelete} className="px-3 py-1 rounded bg-red-600 text-white">Delete</button>
             </div>
           </div>

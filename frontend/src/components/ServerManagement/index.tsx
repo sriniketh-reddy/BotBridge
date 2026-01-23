@@ -82,7 +82,11 @@ const ServerManagement: React.FC = () => {
                     {isExpanded && tools.length > 0 && (
                       <ul className="mt-2 ml-4 list-disc list-inside text-sm text-slate-800 dark:text-slate-200">
                         {tools.map((tool: any, idx: number) => (
-                          <li key={idx}>{tool.name || JSON.stringify(tool)}</li>
+                          <li key={idx} className="mb-1">
+                            <span className="font-semibold">{tool.toolname}</span>
+                            <span className="text-slate-400 dark:text-slate-500 mx-2">-</span>
+                            <span className="text-slate-600 dark:text-slate-300 italic">{tool.description}</span>
+                          </li>
                         ))}
                       </ul>
                     )}

@@ -60,6 +60,7 @@ const ChatInterface: React.FC = () => {
   useEffect(() => {
     const load = async () => {
       if (!chatId) return;
+      setShowScrollButton(false); // Reset scroll button state on chat switch
       try {
         const msgs = await axios.get(`/api/chat/${chatId}/messages`);
         setMessages(msgs.data.messages as any);
@@ -124,7 +125,7 @@ const ChatInterface: React.FC = () => {
 
         <main style={{ maxHeight: "80dvh", height: "80dvh", borderRadius: "30px" }} className="lg:col-span-3 flex flex-col bg-white dark:bg-slate-800 rounded-lg shadow relative">
           <header className="px-6 py-4 border-b dark:border-slate-700 flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-100">Chat</h3>
+            <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-100">{chats.find(c => c.id === chatId)?.chat_name || 'Chat'}</h3>
             <div className="text-sm text-slate-500">{user?.name || user?.email || 'Connected'}</div>
           </header>
 

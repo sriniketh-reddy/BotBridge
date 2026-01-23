@@ -29,12 +29,12 @@ export const getUserMcpServers = async (uid: string) => {
   return res;
 };
 
-export const createMcpServer = async (userId: string, name: string, url: string, tools: any[] = []) => {
+export const createMcpServer = async (userId: string, name: string, url: string, tools: any[] = [], apiKey?: string) => {
   console.debug('[firestore] createMcpServer', url);
   const ref = await usersCollection.doc(userId).collection('user_mcp_servers').doc();
-  await ref.set({ name, url, tools, created_at: new Date().toISOString() });
+  await ref.set({ name, url, tools, apiKey, created_at: new Date().toISOString() });
   console.debug('[firestore] createMcpServer done', ref.id);
-  return { id: ref.id, name, url, tools };
+  return { id: ref.id, name, url, tools, apiKey };
 };
 
 export const deleteMcpServer = async (userId: string, mcpServerId: string) => {
@@ -44,9 +44,11 @@ export const deleteMcpServer = async (userId: string, mcpServerId: string) => {
 };
 
 export const createChat = async (userId: string) => {
+  console.log('[firestore] createChat called for user', userId);
   const now = new Date().toISOString();
   const ref = await usersCollection.doc(userId).collection('user_chats').doc();
-  await ref.set({ chat_name: "Chats", created_at: now, updated_at: now });
+  console.log('[firestore] setting chat_name to "New Chat"');
+  await ref.set({ chat_name: "New Chat", created_at: now, updated_at: now });
   return { id: ref.id };
 };
 
