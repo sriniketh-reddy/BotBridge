@@ -13,6 +13,7 @@ const ChatInterface: React.FC = () => {
   const [chatId, setChatId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
   const [chats, setChats] = useState<ChatItem[]>([]);
   const [error, setError] = useState<string | null>(null);
 
@@ -76,13 +77,31 @@ const ChatInterface: React.FC = () => {
     if (!input.trim() || !chatId) return;
     setSending(true);
     setError(null);
+    const userMessage = input;
+    setInput(""); // Clear input immediately for better UX
+
     try {
-      const res = await axios.post(`/api/chat/${chatId}/messages`, { text: input });
-      // append new messages to state directly to avoid race condition
-      setMessages(prev => [...prev, res.data.message, res.data.bot]);
+      // Add user message immediately with optimistic update
+      const tempUserMsg = { sender: "user", text: userMessage };
+      setMessages(prev => [...prev, tempUserMsg]);
+
+      // Show typing indicator
+      setIsTyping(true);
+
+      const res = await axios.post(`/api/chat/${chatId}/messages`, { text: userMessage });
+
+      // Remove typing indicator and add bot response
+      setIsTyping(false);
+
+      // Replace temp message with actual messages from server
+      setMessages(prev => {
+        const withoutTemp = prev.slice(0, -1);
+        return [...withoutTemp, res.data.message, res.data.bot];
+      });
+
       await fetchChats(); // restore chat list update
-      setInput("");
     } catch (err: any) {
+      setIsTyping(false);
       setError(err?.response?.data?.error || err.message || 'Failed to send');
     } finally {
       setSending(false);
@@ -142,12 +161,32 @@ const ChatInterface: React.FC = () => {
             {error && <div className="text-center text-red-600">{error}</div>}
 
             {messages.map((msg, idx) => (
-              <div key={idx} className={`flex ${msg.sender === "user" ? "justify-end" : "justify-start"}`}>
-                <div className={`max-w-[70%] px-4 py-2 rounded-lg ${msg.sender === "user" ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-100"}`}>
+              <div
+                key={idx}
+                className={`flex ${msg.sender === "user" ? "justify-end" : "justify-start"}`}
+              >
+                <div
+                  className={`max-w-[70%] px-4 py-2 rounded-lg ${msg.sender === "user"
+                      ? "bg-indigo-600 text-white message-user"
+                      : "bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-100 message-bot"
+                    }`}
+                >
                   {msg.text}
                 </div>
               </div>
             ))}
+
+            {/* Typing Indicator */}
+            {isTyping && (
+              <div className="flex justify-start">
+                <div className="bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400 rounded-lg typing-indicator message-bot">
+                  <span className="typing-dot"></span>
+                  <span className="typing-dot"></span>
+                  <span className="typing-dot"></span>
+                </div>
+              </div>
+            )}
+
             <div ref={messagesEndRef} />
           </div>
 
