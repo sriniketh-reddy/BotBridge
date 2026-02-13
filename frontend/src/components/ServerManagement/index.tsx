@@ -55,9 +55,9 @@ const ServerManagement: React.FC = () => {
 
   return (
     <>
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-900 py-8">
-        <div className="app-container">
-          <div className="bg-white dark:bg-slate-800 rounded-lg shadow p-6">
+      <div style={{ maxHeight: "87dvh", height: "87dvh" }} className="overflow-hidden bg-slate-50 dark:bg-slate-900">
+        <div className="app-container h-full py-8">
+          <div style={{ maxHeight: "80dvh", height: "80dvh" }} className="bg-white dark:bg-slate-800 rounded-lg shadow p-6 flex flex-col">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100">
                 MCP Server Management
@@ -74,51 +74,54 @@ const ServerManagement: React.FC = () => {
                 <span className="sm:hidden">Help</span>
               </button>
             </div>
-            <AddServerForm onAdded={load} />
-            {loading && <div className="mt-4 text-sm text-slate-500">Loading servers...</div>}
-            {error && <div className="mt-4 text-sm text-red-600">{error}</div>}
-            <div className="mt-4 space-y-2">
-              {servers.map(s => {
-                const { id, name, url, tools = [] } = s;
-                const isExpanded = expandedServerId === id;
-                return (
-                  <div key={id} className="p-3 bg-slate-50 dark:bg-slate-700 rounded flex items-center justify-between">
-                    <div className="flex-1 truncate">
-                      <div className="font-medium">{name}</div>
-                      <div className="text-sm text-slate-500">{url}</div>
-                    </div>
-                    <button
-                      onClick={() => toggleTools(id)}
-                      className="ml-2 text-sm bg-indigo-600 hover:bg-indigo-700 text-white px-2 py-1 rounded"
-                    >
-                      {isExpanded ? "Hide Tools" : "Show Tools"}
-                    </button>
-                    {isExpanded && tools.length > 0 && (
-                      <ul className="mt-2 ml-4 list-disc list-inside text-sm text-slate-800 dark:text-slate-200">
-                        {tools.map((tool: any, idx: number) => (
-                          <li key={idx} className="mb-1">
-                            <span className="font-semibold">{tool.toolname}</span>
-                            <span className="text-slate-400 dark:text-slate-500 mx-2">-</span>
-                            <span className="text-slate-600 dark:text-slate-300 italic">{tool.description}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                    <div className="flex items-center gap-2 ml-2">
+
+            <div className="flex-1 overflow-y-auto">
+              <AddServerForm onAdded={load} />
+              {loading && <div className="mt-4 text-sm text-slate-500">Loading servers...</div>}
+              {error && <div className="mt-4 text-sm text-red-600">{error}</div>}
+              <div className="mt-4 space-y-2">
+                {servers.map(s => {
+                  const { id, name, url, tools = [] } = s;
+                  const isExpanded = expandedServerId === id;
+                  return (
+                    <div key={id} className="p-3 bg-slate-50 dark:bg-slate-700 rounded flex items-center justify-between">
+                      <div className="flex-1 truncate">
+                        <div className="font-medium">{name}</div>
+                        <div className="text-sm text-slate-500">{url}</div>
+                      </div>
                       <button
-                        disabled={!!deleting[id]}
-                        onClick={() => { setToDelete(id); setConfirmOpen(true); }}
-                        className="text-sm inline-flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-md"
+                        onClick={() => toggleTools(id)}
+                        className="ml-2 text-sm bg-indigo-600 hover:bg-indigo-700 text-white px-2 py-1 rounded"
                       >
-                        {deleting[id] ? "Deleting..." : "Delete"}
+                        {isExpanded ? "Hide Tools" : "Show Tools"}
                       </button>
+                      {isExpanded && tools.length > 0 && (
+                        <ul className="mt-2 ml-4 list-disc list-inside text-sm text-slate-800 dark:text-slate-200">
+                          {tools.map((tool: any, idx: number) => (
+                            <li key={idx} className="mb-1">
+                              <span className="font-semibold">{tool.toolname}</span>
+                              <span className="text-slate-400 dark:text-slate-500 mx-2">-</span>
+                              <span className="text-slate-600 dark:text-slate-300 italic">{tool.description}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                      <div className="flex items-center gap-2 ml-2">
+                        <button
+                          disabled={!!deleting[id]}
+                          onClick={() => { setToDelete(id); setConfirmOpen(true); }}
+                          className="text-sm inline-flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-md"
+                        >
+                          {deleting[id] ? "Deleting..." : "Delete"}
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
-              {!loading && servers.length === 0 && (
-                <div className="text-sm text-slate-500">No servers yet — add one above.</div>
-              )}
+                  );
+                })}
+                {!loading && servers.length === 0 && (
+                  <div className="text-sm text-slate-500">No servers yet — add one above.</div>
+                )}
+              </div>
             </div>
           </div>
         </div>
