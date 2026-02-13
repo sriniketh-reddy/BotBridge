@@ -13,6 +13,7 @@ const ServerManagement: React.FC = () => {
   const [toDelete, setToDelete] = useState<string>("");
   const [expandedServerId, setExpandedServerId] = useState<string | null>(null);
   const [showUserManual, setShowUserManual] = useState(false);
+  const [selectedTool, setSelectedTool] = useState<{ name: string, description: string } | null>(null);
   const { push } = useToast();
 
   const load = async () => {
@@ -84,37 +85,53 @@ const ServerManagement: React.FC = () => {
                   const { id, name, url, tools = [] } = s;
                   const isExpanded = expandedServerId === id;
                   return (
-                    <div key={id} className="p-3 bg-slate-50 dark:bg-slate-700 rounded flex items-center justify-between">
-                      <div className="flex-1 truncate">
-                        <div className="font-medium">{name}</div>
-                        <div className="text-sm text-slate-500">{url}</div>
+                    <div key={id} className="p-3 bg-slate-50 dark:bg-slate-700 rounded">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1 truncate">
+                          <div className="font-medium">{name}</div>
+                          <div className="text-sm text-slate-500">{url}</div>
+                        </div>
+                        <div className="flex items-center gap-2 ml-2">
+                          <button
+                            onClick={() => toggleTools(id)}
+                            className="text-sm bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1 rounded"
+                          >
+                            {isExpanded ? "Hide Tools" : "Show Tools"}
+                          </button>
+                          <button
+                            disabled={!!deleting[id]}
+                            onClick={() => { setToDelete(id); setConfirmOpen(true); }}
+                            className="text-sm inline-flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-md disabled:opacity-50"
+                          >
+                            {deleting[id] ? "Deleting..." : "Delete"}
+                          </button>
+                        </div>
                       </div>
-                      <button
-                        onClick={() => toggleTools(id)}
-                        className="ml-2 text-sm bg-indigo-600 hover:bg-indigo-700 text-white px-2 py-1 rounded"
-                      >
-                        {isExpanded ? "Hide Tools" : "Show Tools"}
-                      </button>
+
                       {isExpanded && tools.length > 0 && (
-                        <ul className="mt-2 ml-4 list-disc list-inside text-sm text-slate-800 dark:text-slate-200">
-                          {tools.map((tool: any, idx: number) => (
-                            <li key={idx} className="mb-1">
-                              <span className="font-semibold">{tool.toolname}</span>
-                              <span className="text-slate-400 dark:text-slate-500 mx-2">-</span>
-                              <span className="text-slate-600 dark:text-slate-300 italic">{tool.description}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                      <div className="flex items-center gap-2 ml-2">
-                        <button
-                          disabled={!!deleting[id]}
-                          onClick={() => { setToDelete(id); setConfirmOpen(true); }}
-                          className="text-sm inline-flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-md"
+                        <div
+                          className="mt-3 flex flex-wrap gap-2 overflow-y-auto overflow-x-hidden custom-scrollbar"
+                          style={{ maxHeight: "120px" }}
                         >
-                          {deleting[id] ? "Deleting..." : "Delete"}
-                        </button>
-                      </div>
+                          {tools.map((tool: any, idx: number) => (
+                            <div
+                              key={idx}
+                              className="inline-flex items-center gap-2 px-3 py-1 bg-indigo-100 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-200 rounded-full text-xs font-medium"
+                            >
+                              <span>{tool.toolname}</span>
+                              <button
+                                onClick={() => setSelectedTool({ name: tool.toolname, description: tool.description })}
+                                className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-indigo-200 dark:bg-indigo-800 hover:bg-indigo-300 dark:hover:bg-indigo-700 text-indigo-700 dark:text-indigo-300 transition-colors"
+                                title="View tool details"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   );
                 })}
@@ -136,6 +153,16 @@ const ServerManagement: React.FC = () => {
             Delete
           </button>
         </div>
+      </Modal>
+
+      {/* Tool Info Modal */}
+      <Modal open={!!selectedTool} title="Tool Details" onClose={() => setSelectedTool(null)} showCloseButton={true}>
+        {selectedTool && (
+          <div>
+            <h4 className="font-semibold text-lg mb-2">{selectedTool.name}</h4>
+            <p className="text-sm text-slate-600 dark:text-slate-300">{selectedTool.description}</p>
+          </div>
+        )}
       </Modal>
 
       {/* User Manual Modal */}
