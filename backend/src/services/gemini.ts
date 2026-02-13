@@ -317,6 +317,6 @@ export const generateBotResponse = async (messages: Array<{ id: string, created_
     const errMsg = e?.message || e;
     fs.appendFileSync(logPath, `[${new Date().toISOString()}] ERROR: ${errMsg}\n`);
     console.error('Gemini+MCP Error:', errMsg);
-    return `Error processing request: ${errMsg}`;
+    return "I'm sorry, an unexpected error occurred. Please try again later.";
   }
 };
